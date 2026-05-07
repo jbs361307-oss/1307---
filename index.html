@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>우리동네 버스 정보</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input { width: 70%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .bus-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .bus-number { font-weight: bold; color: #007bff; }
+        .arrival-time { color: #ff4757; float: right; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🚌 실시간 버스 도착 정보</h2>
+        <p>정류소 ID를 입력하세요 (예: 114000059)</p>
+        <input type="text" id="stationId" placeholder="정류소 ID 입력">
+        <button onclick="getBusData()">조회</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function getBusData() {
+            const resultDiv = document.getElementById('result');
+            const stId = document.getElementById('stationId').value;
+            // 제공해주신 인증키 입력
+            const serviceKey = '23c592de0197b4416ea51da011d76c3a5e805f637ea23480fe6904b86eaf7f58'; 
+            
+            // 공공데이터포털 버스 도착 정보 API URL (JSON 형식 요청)
+            const url = `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearncvsList?serviceKey=${serviceKey}&cityCode=25&nodeId=${stId}&_type=json`;
+
+            resultDiv.innerHTML = "로딩 중...";
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const items = data.response.body.items.item;
+
+                resultDiv.innerHTML = ""; // 초기화
+
+                if(!items) {
+                    resultDiv.innerHTML = "도착 정보가 없거나 ID가 틀렸습니다.";
+                    return;
+                }
+
+                // 정보가 한 개일 때와 여러 개일 때 처리
+                const itemList = Array.isArray(items) ? items : [items];
+
+                itemList.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'bus-item';
+                    div.innerHTML = `
+                        <span class="bus-number">${item.routeno}번</span>
+                        <span class="arrival-time">${Math.floor(item.arrtime / 60)}분 전</span>
+                    `;
+                    resultDiv.appendChild(div);
+                });
+            } catch (error) {
+                resultDiv.innerHTML = "오류 발생! 인증키 활성화 전이거나 ID를 확인해주세요.";
+            }
+        }
+    </script>
+</body>
+</html>
